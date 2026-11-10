@@ -7,7 +7,9 @@
     "start": "node server.js",
     "server": "nodemon server.js",
     "inngest": "npx inngest-cli@latest dev -u http://localhost:5000/api/inngest",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +31,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
-    "prisma": "^7.10.1"
+    "prisma": "^7.10.1",
+    "vitest": "^5.1.0"
   }
 }
