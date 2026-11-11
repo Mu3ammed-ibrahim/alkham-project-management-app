@@ -23,7 +23,7 @@ const saveWorkspace = async (org, { fallbackOwnerId, updateExisting }) => {
         create: { id: org.id, ownerId, ...fields },
         update: updateExisting ? fields : {},
     })
-}
+} 
 
 export const upsertWorkspace = (org) => saveWorkspace(org, { updateExisting: true })
 
