@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isOverdue } from './dates'
+import { isOverdue, localDay } from './dates'
 
 // Shaped like the API sends it: the backend stores the picked calendar day as UTC midnight
 const dueOn = (day, status = 'TODO') => ({ due_date: `${day}T00:00:00.000Z`, status })
@@ -27,5 +27,15 @@ describe('isOverdue', () => {
     it('a task due today is not overdue at any time that day', () => {
         expect(isOverdue(dueOn('2026-06-01'), at(2026, 6, 1, 9))).toBe(false)
         expect(isOverdue(dueOn('2026-06-01'), at(2026, 6, 1, 23, 59))).toBe(false)
+    })
+})
+
+describe('localDay', () => {
+    // toISOString() fails one of these in any timezone but UTC: just after midnight east of UTC, just before it west
+    it.each([
+        [at(2026, 1, 5, 0, 30)],
+        [at(2026, 1, 5, 23, 30)],
+    ])('is the local calendar day all day long (%s)', (date) => {
+        expect(localDay(date)).toBe('2026-01-05')
     })
 })
