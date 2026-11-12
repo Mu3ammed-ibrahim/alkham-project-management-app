@@ -6,7 +6,9 @@ export default defineConfig({
         include: ['**/*.test.js'],
         // *.int.test.js files talk to a real database, so the fast default run skips them
         exclude: [...configDefaults.exclude, '**/*.int.test.js'],
-        // Every test starts from real implementations and the real env, whatever the previous test mocked
+        // Every test starts from real implementations and the real env, whatever the previous test mocked.
+        // mockReset also puts each vi.fn(impl) back to its default impl, so mockResolvedValueOnce can't leak.
+        mockReset: true,
         restoreMocks: true,
         unstubEnvs: true,
     },
