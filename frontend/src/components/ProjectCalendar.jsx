@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { format, getDay, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from "date-fns";
+import { format, getDay, addDays, startOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from "date-fns";
 import { CalendarIcon, Clock, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useDateLocale } from "../hooks/use-date-locale";
 import { isOverdue } from "../lib/dates";
 
 const typeColors = {
@@ -18,6 +20,8 @@ const priorityBorders = {
 };
 
 const ProjectCalendar = ({ tasks }) => {
+    const { t } = useTranslation();
+    const dateLocale = useDateLocale();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -33,7 +37,7 @@ const ProjectCalendar = ({ tasks }) => {
 
     const monthStart = startOfMonth(currentMonth);
     const daysInMonth = eachDayOfInterval({ start: monthStart, end: endOfMonth(currentMonth) });
-    // getDay is 0 for Sunday, matching the Sun-first header, so it's exactly the number of empty cells before the 1st
+    // getDay is 0 for Sunday, matching the Sun-first header (startOfWeek defaults to Sunday too), so it's exactly the number of empty cells before the 1st
     const leadingBlanks = Array.from({ length: getDay(monthStart) }, (_, i) => `blank-${i}`);
 
     const handleMonthChange = (direction) => {
@@ -41,27 +45,27 @@ const ProjectCalendar = ({ tasks }) => {
     };
 
     return (
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Calendar View */}
             <div className="lg:col-span-2 ">
                 <div className="not-dark:bg-white dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-300 dark:border-zinc-800 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-zinc-900 dark:text-white text-md flex gap-2 items-center max-sm:hidden">
-                            <CalendarIcon className="size-5" /> Task Calendar
+                            <CalendarIcon className="size-5" /> {t("calendar.title")}
                         </h2>
                         <div className="flex gap-2 items-center">
                             <button onClick={() => handleMonthChange("prev")}>
-                                <ChevronLeft className="size-5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" />
+                                <ChevronLeft className="size-5 rtl:-scale-x-100 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" />
                             </button>
-                            <span className="text-zinc-900 dark:text-white">{format(currentMonth, "MMMM yyyy")}</span>
+                            <span className="text-zinc-900 dark:text-white">{format(currentMonth, "MMMM yyyy", { locale: dateLocale })}</span>
                             <button onClick={() => handleMonthChange("next")}>
-                                <ChevronRight className="size-5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" />
+                                <ChevronRight className="size-5 rtl:-scale-x-100 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white" />
                             </button>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-7 text-xs text-zinc-600 dark:text-zinc-400 mb-2 text-center">
-                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                        {Array.from({ length: 7 }, (_, i) => format(addDays(startOfWeek(monthStart), i), "EEE", { locale: dateLocale })).map((day) => (
                             <div key={day}>{day}</div>
                         ))}
                     </div>
@@ -86,7 +90,7 @@ const ProjectCalendar = ({ tasks }) => {
                                 >
                                     <span>{format(day, "d")}</span>
                                     {dayTasks.length > 0 && (
-                                        <span className="text-[10px] text-blue-700 dark:text-blue-400">{dayTasks.length} tasks</span>
+                                        <span className="text-[10px] text-blue-700 dark:text-blue-400">{t("calendar.taskCount", { count: dayTasks.length })}</span>
                                     )}
                                 </button>
                             );
@@ -98,22 +102,22 @@ const ProjectCalendar = ({ tasks }) => {
                 {getTasksForDate(selectedDate).length > 0 && (
                     <div className=" not-dark:bg-white mt-6 dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-300 dark:border-zinc-800 rounded-lg p-4">
                         <h3 className="text-zinc-900 dark:text-white text-lg mb-3">
-                            Tasks for {format(selectedDate, "MMM d, yyyy")}
+                            {t("calendar.tasksFor", { date: format(selectedDate, "MMM d, yyyy", { locale: dateLocale }) })}
                         </h3>
                         <div className="space-y-3">
                             {getTasksForDate(selectedDate).map((task) => (
                                 <div
                                     key={task.id}
-                                    className={`bg-zinc-50 dark:bg-zinc-800/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition p-4 rounded border-l-4 ${priorityBorders[task.priority]}`}
+                                    className={`bg-zinc-50 dark:bg-zinc-800/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition p-4 rounded border-s-4 ${priorityBorders[task.priority]}`}
                                 >
                                     <div className="flex justify-between mb-2">
                                         <h4 className="text-zinc-900 dark:text-white font-medium">{task.title}</h4>
                                         <span className={`px-2 py-0.5 rounded text-xs ${typeColors[task.type]}`}>
-                                            {task.type}
+                                            {t(`taskType.${task.type}`)}
                                         </span>
                                     </div>
                                     <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
-                                        <span className="capitalize">{task.priority.toLowerCase()} priority</span>
+                                        <span>{t("priorityLabel", { priority: t(`priority.${task.priority}`) })}</span>
                                         {task.assignee && (
                                             <span className="flex items-center gap-1">
                                                 <User className="w-3 h-3" />
@@ -133,10 +137,10 @@ const ProjectCalendar = ({ tasks }) => {
                 {/* Upcoming Tasks */}
                 <div className="bg-white dark:bg-zinc-950 dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-300 dark:border-zinc-800 rounded-lg p-4">
                     <h3 className="text-zinc-900 dark:text-white text-sm flex items-center gap-2 mb-3">
-                        <Clock className="w-4 h-4" /> Upcoming Tasks
+                        <Clock className="w-4 h-4" /> {t("calendar.upcomingTitle")}
                     </h3>
                     {upcomingTasks.length === 0 ? (
-                        <p className="text-zinc-500 dark:text-zinc-400 text-sm text-center">No upcoming tasks</p>
+                        <p className="text-zinc-500 dark:text-zinc-400 text-sm text-center">{t("calendar.noUpcoming")}</p>
                     ) : (
                         <div className="space-y-2">
                             {upcomingTasks.map((task) => (
@@ -147,10 +151,10 @@ const ProjectCalendar = ({ tasks }) => {
                                     <div className="flex justify-between items-start text-sm">
                                         <span className="text-zinc-900 dark:text-white">{task.title}</span>
                                         <span className={`text-xs px-2 py-0.5 rounded ${typeColors[task.type]}`}>
-                                            {task.type}
+                                            {t(`taskType.${task.type}`)}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-zinc-600 dark:text-zinc-400">{format(task.due_date, "MMM d")}</p>
+                                    <p className="text-xs text-zinc-600 dark:text-zinc-400">{format(task.due_date, "MMM d", { locale: dateLocale })}</p>
                                 </div>
                             ))}
                         </div>
@@ -159,9 +163,9 @@ const ProjectCalendar = ({ tasks }) => {
 
                 {/* Overdue Tasks */}
                 {overdueTasks.length > 0 && (
-                    <div className="bg-white dark:bg-zinc-950  border border-red-300 dark:border-red-500 border-l-4 rounded-lg p-4">
+                    <div className="bg-white dark:bg-zinc-950  border border-red-300 dark:border-red-500 border-s-4 rounded-lg p-4">
                         <h3 className="text-red-700 dark:text-red-400 text-sm flex items-center gap-2 mb-3">
-                            <Clock className="w-4 h-4" /> Overdue Tasks ({overdueTasks.length})
+                            <Clock className="w-4 h-4" /> {t("calendar.overdueTitle", { total: overdueTasks.length })}
                         </h3>
                         <div className="space-y-2">
                             {overdueTasks.slice(0, 5).map((task) => (
@@ -169,17 +173,17 @@ const ProjectCalendar = ({ tasks }) => {
                                     <div className="flex justify-between text-sm text-zinc-900 dark:text-white">
                                         <span>{task.title}</span>
                                         <span className="text-xs px-2 py-0.5 rounded bg-red-200 dark:bg-red-500 text-red-900 dark:text-red-900">
-                                            {task.type}
+                                            {t(`taskType.${task.type}`)}
                                         </span>
                                     </div>
                                     <p className="text-xs text-red-600 dark:text-red-300">
-                                        Due {format(task.due_date, "MMM d")}
+                                        {t("calendar.due", { date: format(task.due_date, "MMM d", { locale: dateLocale }) })}
                                     </p>
                                 </div>
                             ))}
                             {overdueTasks.length > 5 && (
                                 <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
-                                    +{overdueTasks.length - 5} more
+                                    {t("calendar.moreCount", { count: overdueTasks.length - 5 })}
                                 </p>
                             )}
                         </div>
