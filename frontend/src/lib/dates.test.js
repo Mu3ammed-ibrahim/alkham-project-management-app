@@ -23,9 +23,8 @@ describe('isOverdue', () => {
         expect(isOverdue({ due_date: null, status: 'TODO' }, at(2026, 6, 10, 9))).toBe(false)
     })
 
-    // KNOWN BUG: comparing the UTC-midnight instant to "now" marks a task overdue during its own due day.
-    // it.fails passes while the bug exists; the fix turns this into a plain `it`.
-    it.fails('a task due today is not overdue at any time that day', () => {
+    // Regression: comparing the UTC-midnight instant to "now" used to flag a task overdue during its own due day
+    it('a task due today is not overdue at any time that day', () => {
         expect(isOverdue(dueOn('2026-06-01'), at(2026, 6, 1, 9))).toBe(false)
         expect(isOverdue(dueOn('2026-06-01'), at(2026, 6, 1, 23, 59))).toBe(false)
     })
