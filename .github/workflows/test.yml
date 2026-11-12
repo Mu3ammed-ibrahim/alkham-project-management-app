@@ -5,7 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
-  # Lets you re-run everything from the Actions tab without pushing
+  # Adds a "Run workflow" button in the Actions tab (GitHub shows it once this file is on main)
   workflow_dispatch:
 
 # A newer push to the same branch or PR makes the older run pointless
@@ -91,5 +91,6 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
-      # Catches import and syntax errors the tests don't touch; env vars are only read at runtime
+      # Catches import and syntax errors the tests don't touch. CI has no frontend/.env, so the VITE_* values are
+      # inlined as undefined: fine for a build check, never deploy this output (Vercel builds with its own env)
       - run: npm run build
