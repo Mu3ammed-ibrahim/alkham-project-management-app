@@ -3,6 +3,7 @@ import { ArrowRight, Clock, AlertTriangle, User } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useUser } from "@clerk/react";
 import { Link } from "react-router-dom";
+import { isOverdue } from "../lib/dates";
 
 const PREVIEW_COUNT = 3;
 
@@ -22,7 +23,7 @@ export default function TasksSummary() {
     }, [currentWorkspace]);
 
     const myTasks = tasks.filter(i => i.assigneeId === user?.id);
-    const overdueTasks = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'DONE');
+    const overdueTasks = tasks.filter((t) => isOverdue(t));
     const inProgressIssues = tasks.filter(i => i.status === 'IN_PROGRESS');
 
     const summaryCards = [

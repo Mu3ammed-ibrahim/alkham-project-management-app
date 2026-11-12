@@ -1,5 +1,6 @@
 import { FolderOpen, CheckCircle, Users, AlertTriangle } from "lucide-react";
 import { useMemo } from "react";
+import { isOverdue } from "../lib/dates";
 import { useSelector } from "react-redux";
 import { useUser } from "@clerk/react";
 
@@ -18,8 +19,7 @@ export default function StatsGrid() {
             totalProjects: projects.length,
             completedProjects: projects.filter((p) => p.status === "COMPLETED").length,
             myTasks: tasks.filter((t) => t.assigneeId === user?.id).length,
-            // due_date arrives as an ISO string: comparing it to a Date directly is always false
-            overdueIssues: tasks.filter((t) => t.status !== "DONE" && new Date(t.due_date) < now).length,
+            overdueIssues: tasks.filter((t) => isOverdue(t, now)).length,
         };
     }, [currentWorkspace, user?.id]);
 
