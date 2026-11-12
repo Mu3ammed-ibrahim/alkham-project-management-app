@@ -8,8 +8,10 @@
     "server": "nodemon server.js",
     "inngest": "npx inngest-cli@latest dev -u http://localhost:5000/api/inngest",
     "postinstall": "prisma generate",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
+    "test:int": "vitest run --project integration",
+    "test:all": "vitest run"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +34,7 @@
   "devDependencies": {
     "nodemon": "^3.1.14",
     "prisma": "^7.10.1",
+    "supertest": "^7.3.2",
     "vitest": "^5.1.0"
   }
 }
