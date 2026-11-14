@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { format, getDay, addDays, startOfWeek, isSameDay, isBefore, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from "date-fns";
+import { format, getDay, addDays, startOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from "date-fns";
 import { CalendarIcon, Clock, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDateLocale } from "../hooks/use-date-locale";
+import { isOverdue } from "../lib/dates";
 
 const typeColors = {
     BUG: "bg-red-200 text-red-800 dark:bg-red-500 dark:text-red-900",
@@ -28,11 +29,11 @@ const ProjectCalendar = ({ tasks }) => {
     const getTasksForDate = (date) => tasks.filter((task) => isSameDay(task.due_date, date));
 
     const upcomingTasks = tasks
-        .filter((task) => task.due_date && !isBefore(task.due_date, today) && task.status !== "DONE")
+        .filter((task) => task.due_date && task.status !== "DONE" && !isOverdue(task, today))
         .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
         .slice(0, 5);
 
-    const overdueTasks = tasks.filter((task) => task.due_date && isBefore(task.due_date, today) && task.status !== "DONE");
+    const overdueTasks = tasks.filter((task) => isOverdue(task, today));
 
     const monthStart = startOfMonth(currentMonth);
     const daysInMonth = eachDayOfInterval({ start: monthStart, end: endOfMonth(currentMonth) });
@@ -76,7 +77,7 @@ const ProjectCalendar = ({ tasks }) => {
                         {daysInMonth.map((day) => {
                             const dayTasks = getTasksForDate(day);
                             const isSelected = isSameDay(day, selectedDate);
-                            const hasOverdue = dayTasks.some((t) => t.status !== "DONE" && isBefore(t.due_date, today));
+                            const hasOverdue = dayTasks.some((t) => isOverdue(t, today));
 
                             return (
                                 <button

@@ -1,0 +1,96 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  # Adds a "Run workflow" button in the Actions tab (GitHub shows it once this file is on main)
+  workflow_dispatch:
+
+# A newer push to the same branch or PR makes the older run pointless
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+# Tests only read the code; nothing here needs write access to the repo
+permissions:
+  contents: read
+
+jobs:
+  backend-unit:
+    name: Backend unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      # npm ci installs exactly what package-lock.json says; postinstall runs prisma generate
+      - run: npm ci
+      - run: npm test
+
+  backend-integration:
+    name: Backend integration tests (Neon test branch)
+    # No point waking the database if the fast tests already failed
+    needs: backend-unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Every run TRUNCATEs the same test branch, so two runs at once would wipe each other's rows.
+    # This queues them across all branches and PRs instead of running them side by side.
+    concurrency:
+      group: neon-test-branch
+      cancel-in-progress: false
+    env:
+      NEON_BRANCH: test
+      DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.TEST_DIRECT_URL }}
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check the test database secrets are set
+        if: env.DATABASE_URL == '' || env.DIRECT_URL == ''
+        working-directory: .
+        run: |
+          echo "::error::Add TEST_DATABASE_URL and TEST_DIRECT_URL (the Neon *test* branch) under Settings > Secrets and variables > Actions"
+          exit 1
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      # The repo has no migrations folder, so the schema is applied with db push.
+      # No --accept-data-loss: a destructive schema change stops here instead of silently dropping data.
+      - name: Sync the Prisma schema to the test branch
+        run: npx prisma db push
+      - run: npm run test:int
+
+  frontend:
+    name: Frontend tests, lint and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      # Catches import and syntax errors the tests don't touch. CI has no frontend/.env, so the VITE_* values are
+      # inlined as undefined: fine for a build check, never deploy this output (Vercel builds with its own env)
+      - run: npm run build

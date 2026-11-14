@@ -30,8 +30,9 @@ app.use(errorHandler)
 
 const PORT = process.env.PORT || 5000
 
-// Vercel runs the default export itself, so only open a port when running locally
-if (!process.env.VERCEL) {
+// Vercel runs the default export itself, and tests (Vitest sets NODE_ENV=test) pass `app` to Supertest,
+// so only open a port when running locally
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
     app.listen(PORT , ()=> console.log('server is ruuning in port'))
 }
 

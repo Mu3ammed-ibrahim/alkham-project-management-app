@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { isOverdue } from "../lib/dates";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { CheckCircle, Clock, AlertTriangle, Users, ArrowRightIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -35,7 +36,7 @@ const ProjectAnalytics = ({ project, tasks }) => {
             if (t.status === "DONE") stats.completed++;
             if (t.status === "IN_PROGRESS") stats.inProgress++;
             if (t.status === "TODO") stats.todo++;
-            if (new Date(t.due_date) < now && t.status !== "DONE") stats.overdue++;
+            if (isOverdue(t, now)) stats.overdue++;
 
             if (statusMap[t.status] !== undefined) statusMap[t.status]++;
             if (typeMap[t.type] !== undefined) typeMap[t.type]++;
